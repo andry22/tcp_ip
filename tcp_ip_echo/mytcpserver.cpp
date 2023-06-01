@@ -1,0 +1,40 @@
+#include "mytcpserver.h"
+#include <QDebug>
+#include <QCoreApplication>
+extern uint16_t port ;
+MyTcpServer::MyTcpServer(QObject *parent) : QObject(parent)
+{
+    mTcpServer = new QTcpServer(this);
+
+    connect(mTcpServer, &QTcpServer::newConnection, this, &MyTcpServer::slotNewConnection);
+
+    if(!mTcpServer->listen(QHostAddress::Any, port)){
+        qDebug() << "server is not started";
+    } else {
+        qDebug() << "server is started";
+    }
+}
+
+void MyTcpServer::slotNewConnection()
+{
+    mTcpSocket = mTcpServer->nextPendingConnection();
+
+    connect(mTcpSocket, &QTcpSocket::readyRead, this, &MyTcpServer::slotServerRead);
+    connect(mTcpSocket, &QTcpSocket::disconnected, this, &MyTcpServer::slotClientDisconnected);
+}
+
+void MyTcpServer::slotServerRead()
+{
+    while(mTcpSocket->bytesAvailable()>0)
+    {
+        QByteArray array = mTcpSocket->readAll();
+
+        mTcpSocket->write(array);
+    }
+}
+
+void MyTcpServer::slotClientDisconnected()
+{
+    mTcpSocket->close();
+}
+
