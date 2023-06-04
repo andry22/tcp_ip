@@ -4,10 +4,11 @@
 
 
 extern uint16_t port ;
+
 MyTcpServer::MyTcpServer(QObject *parent) : QObject(parent)
 {
     mTcpServer = new QTcpServer(this);
-
+    // при появдении нового соединения - открывается сокет соединения
     connect(mTcpServer, &QTcpServer::newConnection, this, &MyTcpServer::slotNewConnection);
 
     if(!mTcpServer->listen(QHostAddress::Any, port)){
@@ -20,7 +21,7 @@ MyTcpServer::MyTcpServer(QObject *parent) : QObject(parent)
 void MyTcpServer::slotNewConnection()
 {
     mTcpSocket = mTcpServer->nextPendingConnection();
-
+    // установка связи при сигналах на прием данных и собственно чтения данных
     connect(mTcpSocket, &QTcpSocket::readyRead, this, &MyTcpServer::slotServerRead);
     connect(mTcpSocket, &QTcpSocket::disconnected, this, &MyTcpServer::slotClientDisconnected);
 }
@@ -33,13 +34,14 @@ void MyTcpServer::slotServerRead()
              // отлов конца строки
               if(array.indexOf("\n") >= 0 )
               {
+                  // по приходу "\n" данные отправляются в главный поток для переворота
                   isrun = true ;
                   emit signalUpdateReciveData(&array , &isrun)  ;
-
+                  // ожидание завершения обработки данных
                   while(isrun)  ;
 
                   qDebug() << "SOCKET  update " <<  this->thread()  ;
-
+                  // отправка данных обратно.
                   this->mTcpSocket->write(array);
                   array.clear()  ;
               }
@@ -57,7 +59,7 @@ UpdateData::UpdateData(QObject *parent) : QObject(parent)
 
 }
 
-
+// слот переворота данных
 void UpdateData::slotUpdateReciveData( QByteArray * mass , bool * isrun)
 {
 

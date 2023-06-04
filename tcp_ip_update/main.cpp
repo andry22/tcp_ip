@@ -18,11 +18,13 @@ int main(int argc, char *argv[])
         port = atoi (argv[1]) ;
     }
     catch(...) {}  ;
-
+    // сервер приема иотправки сообщений
     MyTcpServer * server = new MyTcpServer() ;
+    //  поток, в котором работает сервер ( сокет)
     QThread     * thread = new QThread       ;
-
+    // помещение сервера в поток
     server->moveToThread(thread)  ;
+    // слот обработки данных ( переворот данных)
     UpdateData update_data ;
 
     QObject::connect(server, SIGNAL(signalUpdateReciveData( QByteArray * , bool *)), &update_data ,  SLOT(slotUpdateReciveData(QByteArray *, bool *)) );
